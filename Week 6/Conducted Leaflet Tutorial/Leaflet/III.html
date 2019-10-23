@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Leaflet Tutorial 3 : Choropleth Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+   crossorigin=""/>
+ <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+   integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+   crossorigin=""></script>
+<style>
+    body {
+        background-color: #111;
+    }
+    #mapid { height: 800px; }
+    #mapText {
+        text-align: center;
+        font-family: Arial;
+        font-weight: bold;
+        font-size: 20px;
+        line-height: 25px;
+        color: #c32026;
+        display: inline-block;
+        margin-top: 20px;
+        width:100%;
+    }
+    .info { 
+        padding: 6px 8px; 
+        font: 14px/16px Arial, Helvetica, sans-serif; 
+        background: white; 
+        background: rgba(255,255,255,0.8); 
+        box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+        border-radius: 5px; 
+    } 
+    .info h4 { margin: 0 0 5px; color: #777; }
+    .legend { 
+        text-align: left; 
+        line-height: 18px; 
+        color: #555; 
+    } 
+    .legend i { 
+        width: 18px; 
+        height: 18px;
+         float: left; 
+         margin-right: 8px; 
+         opacity: 0.7; 
+    }
+</style>
+</head>
+<body>
+    <div id="mapid"></div>
+    <div id="mapText">A colorful interactive choropleth map of US States Population Density with the help of GeoJSON and some custom controls </div>
+
+</body>
+<script type="text/javascript" src="https://leafletjs.com/examples/choropleth/us-states.js"></script>
+
+<script type="text/javascript">
+
+	var map = L.map('mapid').setView([37.8, -96], 5);
+
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibmlyYmhheXBoaCIsImEiOiJjanVzajFnd3k0NnE4M3lucWdsbm1jam9sIn0.4U06eoSypRZF7TB0czQdHA', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+			'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox.light'
+	}).addTo(map);
+
+
+	// control that shows state info on hover
+	var info = L.control();
+
+	info.onAdd = function (map) {
+		this._div = L.DomUtil.create('div', 'info');
+		this.update();
+		return this._div;
+	};
+
+	info.update = function (props) {
+		this._div.innerHTML = '<h4>US Population Density</h4>' +  (props ?
+			'<b>' + props.name + '</b><br />' + props.density + ' people / mi<sup>2</sup>'
+			: 'Hover over a state');
+	};
+
+	info.addTo(map);
+
+
+	// get color depending on population density value
+	function getColor(d) {
+		return d > 1000 ? '#0c2c84' :
+				d > 500  ? '#225ea8' :
+				d > 200  ? '#1d91c0' :
+				d > 100  ? '#41b6c4' :
+				d > 50   ? '#7fcdbb' :
+				d > 20   ? '#c7e9b4' :
+				d > 10   ? '#edf8b1' :
+							'#ffffd9';
+	}
+    
+
+	function style(feature) {
+		return {
+			weight: 2,
+			opacity: 1,
+			color: 'white',
+			dashArray: '3',
+			fillOpacity: 0.7,
+			fillColor: getColor(feature.properties.density)
+		};
+	}
+
+	function highlightFeature(e) {
+		var layer = e.target;
+
+		layer.setStyle({
+			weight: 5,
+			color: '#666',
+			dashArray: '',
+			fillOpacity: 0.7
+		});
+
+		if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+			layer.bringToFront();
+		}
+
+		info.update(layer.feature.properties);
+	}
+
+	var geojson;
+
+	function resetHighlight(e) {
+		geojson.resetStyle(e.target);
+		info.update();
+	}
+
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());
+	}
+
+	function onEachFeature(feature, layer) {
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+			click: zoomToFeature
+		});
+	}
+
+	geojson = L.geoJson(statesData, {
+		style: style,
+		onEachFeature: onEachFeature
+	}).addTo(map);
+
+	map.attributionControl.addAttribution('Population data &copy; <a href="http://census.gov/">US Census Bureau</a>');
+
+
+	var legend = L.control({position: 'bottomright'});
+
+	legend.onAdd = function (map) {
+
+		var div = L.DomUtil.create('div', 'info legend'),
+			grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+			labels = [],
+			from, to;
+
+		for (var i = 0; i < grades.length; i++) {
+			from = grades[i];
+			to = grades[i + 1];
+
+			labels.push(
+				'<i style="background:' + getColor(from + 1) + '"></i> ' +
+				from + (to ? '&ndash;' + to : '+'));
+		}
+
+		div.innerHTML = labels.join('<br>');
+		return div;
+	};
+
+	legend.addTo(map);
+
+</script>
+</html>
