@@ -1,7 +1,7 @@
 ## GIS&T Course (ISTE 740) Weekly Activities @ RIT
 This repositiory contains weekly activites performed for the Geographic Information Sciences and Technologies course @ Rochester Institute of Technology, New York. The professor for this course was Dr. Brian Tomaszewski
 
-Following are some highlights of the weekly activities performed in the course. To understand what to expect from the course you can have a look at the activities themseleves provided in the repository week wise. 
+Following are some highlights of the weekly activities performed in the course. To understand what to expect from the course you can have a look at the activities themselves provided in the repository week wise. 
 
 ### Week 1
 #### A case study on maps and representation techniques. Example maps I chose to use. 
